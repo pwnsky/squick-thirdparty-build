@@ -14,13 +14,16 @@
 
 #pragma once
 
+#include <cstdint>
+
+#include <mongocxx/events/heartbeat_failed_event-fwd.hpp>
+
 #include <bsoncxx/stdx/string_view.hpp>
 
 #include <mongocxx/config/prelude.hpp>
 
 namespace mongocxx {
-MONGOCXX_INLINE_NAMESPACE_BEGIN
-
+namespace v_noabi {
 namespace events {
 
 ///
@@ -28,9 +31,9 @@ namespace events {
 /// status of a server.
 ///
 /// @see "ServerHeartbeatFailedEvent" in
-/// https://github.com/mongodb/specifications/blob/master/source/server-discovery-and-monitoring/server-discovery-and-monitoring-monitoring.rst
+/// https://github.com/mongodb/specifications/blob/master/source/server-discovery-and-monitoring/server-discovery-and-monitoring.rst
 ///
-class MONGOCXX_API heartbeat_failed_event {
+class heartbeat_failed_event {
    public:
     MONGOCXX_PRIVATE explicit heartbeat_failed_event(const void* event);
 
@@ -58,7 +61,7 @@ class MONGOCXX_API heartbeat_failed_event {
     ///
     /// @return The host name.
     ///
-    bsoncxx::stdx::string_view host() const;
+    bsoncxx::v_noabi::stdx::string_view host() const;
 
     ///
     /// Returns the port.
@@ -79,7 +82,7 @@ class MONGOCXX_API heartbeat_failed_event {
 };
 
 }  // namespace events
-MONGOCXX_INLINE_NAMESPACE_END
+}  // namespace v_noabi
 }  // namespace mongocxx
 
 #include <mongocxx/config/postlude.hpp>

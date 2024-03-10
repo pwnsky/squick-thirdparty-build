@@ -16,22 +16,23 @@
 
 #include <memory>
 
+#include <mongocxx/change_stream-fwd.hpp>
+#include <mongocxx/client-fwd.hpp>
+#include <mongocxx/collection-fwd.hpp>
+#include <mongocxx/database-fwd.hpp>
+
 #include <bsoncxx/document/view.hpp>
 #include <bsoncxx/stdx/optional.hpp>
 
 #include <mongocxx/config/prelude.hpp>
 
 namespace mongocxx {
-MONGOCXX_INLINE_NAMESPACE_BEGIN
-
-class client;
-class collection;
-class database;
+namespace v_noabi {
 
 ///
 /// Class representing a MongoDB change stream.
 ///
-class MONGOCXX_API change_stream {
+class change_stream {
    public:
     /// A change stream iterator.
     class MONGOCXX_API iterator;
@@ -57,10 +58,10 @@ class MONGOCXX_API change_stream {
     /// available notification. The state of all iterators is tracked by the
     /// change_stream itself, so advancing one iterator advances all iterators.
     ///
-    /// change_stream::begin() and the increment operators are blocking operations.
-    /// They will not return until a notification is available, the max_await_time (from
-    /// the options::change_stream) milliseconds have elapsed, or a server
-    /// error is encountered.
+    /// change_stream::begin() and increment operators may block if the current batch of documents
+    /// is exhausted. They will not return until a notification is available, the max_await_time
+    /// (from the options::change_stream) milliseconds have elapsed, or a server error is
+    /// encountered.
     ///
     /// When change_stream.begin() == change_stream.end(), no notifications
     /// are available. Each call to change_stream.begin() checks again for
@@ -69,7 +70,7 @@ class MONGOCXX_API change_stream {
     /// @return
     ///   The change_stream::iterator
     /// @exception
-    ///   Throws mongocxx::query_exception if the query failed.
+    ///   Throws mongocxx::v_noabi::query_exception if the query failed.
     ///
     iterator begin() const;
 
@@ -95,7 +96,7 @@ class MONGOCXX_API change_stream {
     /// resume token of the most recently returned document in the stream, or a
     /// postBatchResumeToken if the current batch of documents has been exhausted.
     ///
-    /// @see https://docs.mongodb.com/manual/changeStreams/#change-stream-resume-token
+    /// @see https://www.mongodb.com/docs/manual/changeStreams/#resume-tokens
     ///
     /// The returned document::view is valid for the lifetime of the stream and
     /// its data may be updated if the change stream is iterated after this function.
@@ -105,13 +106,14 @@ class MONGOCXX_API change_stream {
     /// @return
     ///   The token.
     ///
-    bsoncxx::stdx::optional<bsoncxx::document::view> get_resume_token() const;
+    bsoncxx::v_noabi::stdx::optional<bsoncxx::v_noabi::document::view> get_resume_token() const;
 
    private:
-    friend class client;
-    friend class collection;
-    friend class database;
-    friend class change_stream::iterator;
+    friend ::mongocxx::v_noabi::client;
+    friend ::mongocxx::v_noabi::collection;
+    friend ::mongocxx::v_noabi::database;
+
+    friend ::mongocxx::v_noabi::change_stream::iterator;
 
     MONGOCXX_PRIVATE change_stream(void* change_stream_ptr);
 
@@ -122,11 +124,11 @@ class MONGOCXX_API change_stream {
 ///
 /// Class representing a MongoDB change stream iterator.
 ///
-class MONGOCXX_API change_stream::iterator {
+class change_stream::iterator {
    public:
     // Support input-iterator (caveat of post-increment returning void)
     using difference_type = std::int64_t;
-    using value_type = const bsoncxx::document::view;
+    using value_type = const bsoncxx::v_noabi::document::view;
     using pointer = std::add_pointer<value_type>::type;
     using reference = std::add_lvalue_reference<value_type>::type;
     using iterator_category = std::input_iterator_tag;
@@ -141,39 +143,52 @@ class MONGOCXX_API change_stream::iterator {
     ///
     /// Dereferences the view for the document currently being pointed to.
     ///
-    const bsoncxx::document::view& operator*() const;
+    /// The returned document::view is valid until the iterator is incremented. The value may be
+    /// copied to extend its lifetime.
+    ///
+    const bsoncxx::v_noabi::document::view& operator*() const;
 
     ///
     /// Accesses a member of the dereferenced document currently being pointed to.
     ///
-    const bsoncxx::document::view* operator->() const;
+    /// The returned document::view is valid until the iterator is incremented. The value may be
+    /// copied to extend its lifetime.
+    ///
+    const bsoncxx::v_noabi::document::view* operator->() const;
 
     ///
     /// Pre-increments the iterator to move to the next document.
     ///
-    /// change_stream::begin() and increment operators are blocking operations.
-    /// They will not return until a notification is available, the max_await_time (from
-    /// the options::change_stream) miliseconds have elapsed, or a server
-    /// error is encountered.
+    /// change_stream::begin() and increment operators may block if the current batch of documents
+    /// is exhausted. They will not return until a notification is available, the max_await_time
+    /// (from the options::change_stream) milliseconds have elapsed, or a server error is
+    /// encountered.
     ///
-    /// @throws mongocxx::query_exception if the query failed
+    /// If no notification is available, callers may call change_stream::begin() to check for more
+    /// notifications.
+    ///
+    /// @throws mongocxx::v_noabi::query_exception if the query failed
     ///
     iterator& operator++();
 
     ///
     /// Post-increments the iterator to move to the next document.
     ///
-    /// change_stream::begin() and increment operators are blocking operations.
-    /// They will not return until a notification is available, the max_await_time (from
-    /// the options::change_stream) miliseconds have elapsed, or a server
-    /// error is encountered.
+    /// change_stream::begin() and increment operators may block if the current batch of documents
+    /// is exhausted. They will not return until a notification is available, the max_await_time
+    /// (from the options::change_stream) milliseconds have elapsed, or a server error is
+    /// encountered.
     ///
-    /// @throws mongocxx::query_exception if the query failed
+    /// If no notification is available, callers may call change_stream::begin() to check for more
+    /// notifications.
+    ///
+    /// @throws mongocxx::v_noabi::query_exception if the query failed
     ///
     void operator++(int);
 
    private:
-    friend class change_stream;
+    friend ::mongocxx::v_noabi::change_stream;
+
     enum class iter_type { k_tracking, k_default_constructed, k_end };
 
     MONGOCXX_PRIVATE explicit iterator(iter_type type, const change_stream* change_stream);
@@ -202,7 +217,7 @@ class MONGOCXX_API change_stream::iterator {
     const change_stream* _change_stream;
 };
 
-MONGOCXX_INLINE_NAMESPACE_END
+}  // namespace v_noabi
 }  // namespace mongocxx
 
 #include <mongocxx/config/postlude.hpp>
